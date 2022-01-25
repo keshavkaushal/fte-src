@@ -3,6 +3,7 @@
 <head>
     <script src="phaser.min.js"></script>
     <script src="midi-parser.js"></script>
+    <script src="midiToEvents.js"></script>
 </head>
 <body style="margin: 1px; overflow: hidden;">
     <input style="display:none" type="file" id="filereader">
@@ -31,38 +32,117 @@
             },
             scene: {
                 create: create,
-                update: update
+                update: update,
+                preload: preload,
             }
         };
 
         var MIDI_LOADED = false;
-        var SPEED = 2;
+        var SPEED = 1;
+        var TICKRATE = 1;
+        var PAUSED = false;
+
+        // BUTTONS
+
+        var pause;
+        var play;
 
         var graphics;
         var statics;
         var tick = 0
-        var midi = [[25, 10, 80], [35, 90, 50], [20, 140, 80]]
+        var midi = [[1, 10, 80], [25, 10, 80], [35, 90, 50], [20, 140, 80]]
         var game = new Phaser.Game(config);
+
+        function preload()
+        {
+            this.load.image('play', '/play.png');
+            this.load.image('pause', '/pause.png');
+            this.load.image('restart', '/restart.png');
+            this.load.image('upload', '/upload.png');
+            this.load.image('ff', '/ff.png');
+            this.load.image('rw', '/rw.png');
+            this.load.image('switch', '/switch.png');
+        }
 
         function create ()
         {
             graphics = this.add.graphics();
 
-            const midiin = this.add.text(50, 50, 'atari', '', 16);
-            midiin.setText(['MIDI']);
-            midiin.setFontSize(60);
-            midiin.setInteractive().on('pointerdown', () => document.getElementById('filereader').click() );
+            play = this.add.image(50, 160, 'play');
+            play.setInteractive().on('pointerdown', () => playpause());
+            play.visible = false;
+
+            pause = this.add.image(50, 160, 'pause');
+            pause.setInteractive().on('pointerdown', () => playpause());
+            
+            var restart = this.add.image(50, 260, 'restart');
+            restart.setInteractive().on('pointerdown', () => restartfn());
+            
+            var upload = this.add.image(50, 60, 'upload');
+            upload.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
+
+            var swit = this.add.image(50, 660, 'switch');
+            restart.setInteractive().on('pointerdown', () => restartfn());
+
+
+
+
+
+            var ff = this.add.image(50, 360, 'ff');
+            ff.setInteractive().on('pointerdown', () => speedup());
+
+            var rw = this.add.image(50, 460, 'rw');
+            rw.setInteractive().on('pointerdown', () => slowdown());
+
+
+
+            // const midiin = this.add.text(50, 50, 'MIDI', { fill: '#0f0' });
+            // // midiin.setText(['MIDI']);
+            // midiin.setFontSize(60);
+            // midiin.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
+
+            // const playpause = this.add.text(50, 150, 'Play/Pause', { fill: '#0f0' });
+            // playpause.setFontSize(60);
+            // playpause.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
+        }
+
+        function restartfn ()
+        {
+            tick = 0;
+        }
+
+        function speedup ()
+        {
+            TICKRATE = TICKRATE * 2;
+            console.log(SPEED);
+        }
+
+        function slowdown ()
+        {
+            TICKRATE = TICKRATE / 2;
+        }
+
+        function playpause ()
+        {
+            PAUSED = !PAUSED;
+            pause.visible = !pause.visible;
+            play.visible = !play.visible;
         }
 
         function update ()
         {
-            if (MIDI_LOADED){tick = tick + 1}
+            if (MIDI_LOADED){
+                if(!PAUSED){
+                    tick = tick + TICKRATE;
+                }
+                
+            };
 
 
-                graphics.clear();
-            draw_white_keys()
-            draw_notes()
-            draw_black_keys()
+            graphics.clear();
+            draw_white_keys();
+            draw_notes();
+            draw_black_keys();
 
         }
 
@@ -105,7 +185,7 @@
                 x = (note*30)+22
                 y = tick*SPEED - start - duration
 
-                graphics.fillStyle(0xeff0000, 1);
+                graphics.fillStyle(0xa5fed2, 1);
                 if (y < 760){
                     graphics.fillRect(x, y, 25, duration);
                 }
@@ -114,7 +194,8 @@
                         graphics.fillRect(x, 760, 25, 140);
                     }
                 }
-            })    
+            })  
+
         }
     </script>
 
