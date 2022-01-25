@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="phaser.min.js"></script>
+</head>
+<body style="margin: 1px; overflow: hidden;">
+
+    <script>
+        var config = {
+            type: Phaser.AUTO,
+            scale: {
+                mode: Phaser.Scale.FIT,
+                parent: 'phaser-example',
+                autoCenter: Phaser.Scale.CENTER_BOTH,
+                width: 1600,
+                height: 900
+            },
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 500 }
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+
+        var SPEED = 2;
+
+        var follower;
+        var path;
+        var graphics;
+        var statics;
+        var tick = 0
+        var midi = [[25, 10, 80], [35, 90, 50], [20, 140, 80]]
+        var game = new Phaser.Game(config);
+
+        function preload ()
+        {
+            this.load.setBaseURL('http://labs.phaser.io');
+
+            this.load.image('sky', 'assets/skies/space3.png');
+            this.load.image('logo', 'assets/sprites/phaser3-logo.png');
+            this.load.image('red', 'assets/particles/red.png');
+        }
+
+
+        function create ()
+        {
+            graphics = this.add.graphics();
+        }
+
+
+        function update ()
+        {
+            tick = tick + 1
+
+            graphics.clear();
+            draw_white_keys()
+            draw_notes()
+            draw_black_keys()
+
+        }
+
+        function draw_white_keys ()
+        {
+            graphics.fillStyle(0xffffff, 1);
+
+            for (let i = 0; i < 52; i++) {
+                graphics.fillRect((i*30)+22, 760, 25, 140);
+            } 
+        }
+
+        function draw_black_keys ()
+        {
+            graphics.fillStyle(0x000000, 1);
+
+            black_keys_order = ['y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',]
+
+            for (let i = 0; i < 52; i++) {
+                if (black_keys_order[i] == 'y'){
+                    graphics.fillRect((i*30)+41, 760, 17, 95);
+                }
+            }  
+        }
+
+        function draw_notes ()
+        {
+            midi.forEach(function(item, index, array) {
+                note = item[0]
+                start = item[1]
+                duration = item[2]
+
+                x = (note*30)+22
+                y = tick*SPEED - start - duration
+
+                graphics.fillStyle(0xeff0000, 1);
+                if (y < 760){
+                    graphics.fillRect(x, y, 25, duration);
+                }
+                if (tick*SPEED - start > 760){
+                    if (y < 760){
+                        graphics.fillRect(x, 760, 25, 140);
+                    }
+                }
+            })    
+        }
+    </script>
+
+</body>
+</html>
