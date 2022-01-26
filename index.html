@@ -38,7 +38,6 @@
         };
 
         var MIDI_LOADED = false;
-        var SPEED = 1;
         var TICKRATE = 1;
         var PAUSED = false;
 
@@ -50,7 +49,7 @@
         var graphics;
         var statics;
         var tick = 0
-        var midi = [[1, 10, 80], [25, 10, 80], [35, 90, 50], [20, 140, 80]]
+        var midi = [[25, 10, 80], [35, 90, 50], [20, 140, 80]]
         var game = new Phaser.Game(config);
 
         function preload()
@@ -68,30 +67,30 @@
         {
             graphics = this.add.graphics();
 
-            play = this.add.image(50, 160, 'play');
+            play = this.add.image(60, 360, 'play');
             play.setInteractive().on('pointerdown', () => playpause());
             play.visible = false;
 
-            pause = this.add.image(50, 160, 'pause');
+            pause = this.add.image(60, 360, 'pause');
             pause.setInteractive().on('pointerdown', () => playpause());
             
-            var restart = this.add.image(50, 260, 'restart');
+            var restart = this.add.image(60, 660, 'restart');
             restart.setInteractive().on('pointerdown', () => restartfn());
             
-            var upload = this.add.image(50, 60, 'upload');
+            var upload = this.add.image(60, 160, 'upload');
             upload.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
 
-            var swit = this.add.image(50, 660, 'switch');
+            var swit = this.add.image(60, 260, 'switch');
             restart.setInteractive().on('pointerdown', () => restartfn());
 
 
 
 
 
-            var ff = this.add.image(50, 360, 'ff');
+            var ff = this.add.image(60, 460, 'ff');
             ff.setInteractive().on('pointerdown', () => speedup());
 
-            var rw = this.add.image(50, 460, 'rw');
+            var rw = this.add.image(60, 560, 'rw');
             rw.setInteractive().on('pointerdown', () => slowdown());
 
 
@@ -114,7 +113,6 @@
         function speedup ()
         {
             TICKRATE = TICKRATE * 2;
-            console.log(SPEED);
         }
 
         function slowdown ()
@@ -183,13 +181,15 @@
                 duration = item[2]
 
                 x = (note*30)+22
-                y = tick*SPEED - start - duration
+                y = tick - start - duration
 
-                graphics.fillStyle(0xa5fed2, 1);
+                // THE FALLING NOTE, STOPS WHEN THE TOP OF THE BAR HITS THE PIANO
                 if (y < 760){
+                    graphics.fillStyle(0xa5fed2, 1);
                     graphics.fillRect(x, y, 25, duration);
                 }
-                if (tick*SPEED - start > 760){
+
+                if (tick - start > 760){
                     if (y < 760){
                         graphics.fillRect(x, 760, 25, 140);
                     }
