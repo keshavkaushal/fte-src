@@ -1,9 +1,34 @@
-function midiToEvents ()
+function midiToEvents (midi)
 {
-	graphics = this.add.graphics();
 
-	const midiin = this.add.text(50, 50, 'atari', '', 16);
-	midiin.setText(['MIDI']);
-	midiin.setFontSize(60);
-	midiin.setInteractive().on('pointerdown', () => document.getElementById('filereader').click() );
+	console.log(midi)
+	tracks = []
+
+	// CREATE A 2D ARRAY - TRACK, EVENTS
+	for(const currentTrack of midi.track)
+	{
+		newTrack = []
+
+		for(const curentEvent of currentTrack.event)
+		{
+			if(curentEvent.type === 9)
+			{
+				newTrack.push(curentEvent);
+			}
+		}
+
+		if (newTrack.length > 0){
+			tracks.push(newTrack)
+		}
+		
+	}
+
+	// [[NOTE, START, DURATION],[ETC]]
+	for (const track of tracks)
+	{
+
+	}
+	console.log(tracks);
+	
+	return tracks;
 }

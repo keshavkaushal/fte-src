@@ -2,8 +2,7 @@
 <html>
 <head>
     <script src="phaser.min.js"></script>
-    <script src="midi-parser.js"></script>
-    <script src="midiToEvents.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
 </head>
 <body style="margin: 1px; overflow: hidden;">
     <input style="display:none" type="file" id="filereader">
@@ -11,15 +10,23 @@
 
         // SCRIPT TO LISTEN FOR NEW MIDIs
         var MIIDI;
+        var timeDivision
 
-        window.onload = function(){
-            var source = document.getElementById('filereader');
-            MidiParser.parse( source, function(obj){
-                MIIDI = obj;
-                MIDI_LOADED = true;
-                console.log(MIIDI);
-            });
-        };
+        document.getElementById("filereader").onchange = function (e) {
+
+            if (e.target.files.length > 0){
+                console.log("a file has been shdsf")
+
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const midi2 = new Midi(e.target.result);
+                    console.log(midi2)
+                }
+
+                reader.readAsArrayBuffer(e.target.files[0]);
+            }
+        }
 
         var config = {
             type: Phaser.AUTO,
@@ -83,26 +90,12 @@
             var swit = this.add.image(60, 260, 'switch');
             restart.setInteractive().on('pointerdown', () => restartfn());
 
-
-
-
-
             var ff = this.add.image(60, 460, 'ff');
             ff.setInteractive().on('pointerdown', () => speedup());
 
             var rw = this.add.image(60, 560, 'rw');
             rw.setInteractive().on('pointerdown', () => slowdown());
 
-
-
-            // const midiin = this.add.text(50, 50, 'MIDI', { fill: '#0f0' });
-            // // midiin.setText(['MIDI']);
-            // midiin.setFontSize(60);
-            // midiin.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
-
-            // const playpause = this.add.text(50, 150, 'Play/Pause', { fill: '#0f0' });
-            // playpause.setFontSize(60);
-            // playpause.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
         }
 
         function restartfn ()
@@ -191,6 +184,7 @@
 
                 if (tick - start > 760){
                     if (y < 760){
+                        graphics.fillStyle(0xa5fed2, 1);
                         graphics.fillRect(x, 760, 25, 140);
                     }
                 }
@@ -198,6 +192,5 @@
 
         }
     </script>
-
 </body>
 </html>
