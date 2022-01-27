@@ -3,25 +3,32 @@
 <head>
     <script src="phaser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
+    <!--     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.36/Tone.min.js" integrity="sha512-6EwXyUr/E8qXmKzIejsvIHRKKq+KFuQ4YvEJgXI9Ketvi2x5zMIIX5Y/v9OEKoZ9RuGYaOMI0UHRrsMEau+Kgw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
 </head>
 <body style="margin: 1px; overflow: hidden;">
     <input style="display:none" type="file" id="filereader">
     <script>
 
+        // const synth = new Tone.Synth().toDestination();
+
+        //play a middle 'C' for the duration of an 8th note
+        // synth.triggerAttackRelease("C4", "8n");
+
         // SCRIPT TO LISTEN FOR NEW MIDIs
-        var MIIDI;
+        var MIDI;
         var timeDivision
 
         document.getElementById("filereader").onchange = function (e) {
 
             if (e.target.files.length > 0){
-                console.log("a file has been shdsf")
 
                 const reader = new FileReader();
 
                 reader.onload = function(e) {
-                    const midi2 = new Midi(e.target.result);
-                    console.log(midi2)
+                    MIDI = new Midi(e.target.result);
+                    MIDI_LOADED = true;
+                    console.log(MIDI);
+                    playpause();
                 }
 
                 reader.readAsArrayBuffer(e.target.files[0]);
@@ -34,7 +41,7 @@
                 mode: Phaser.Scale.FIT,
                 parent: 'phaser-example',
                 autoCenter: Phaser.Scale.CENTER_BOTH,
-                width: 1600,
+                width: 1700,
                 height: 900
             },
             scene: {
@@ -46,17 +53,14 @@
 
         var MIDI_LOADED = false;
         var TICKRATE = 1;
-        var PAUSED = false;
-
-        // BUTTONS
+        var PAUSED = true;
 
         var pause;
         var play;
 
         var graphics;
         var statics;
-        var tick = 0
-        var midi = [[25, 10, 80], [35, 90, 50], [20, 140, 80]]
+        var tick = 0;
         var game = new Phaser.Game(config);
 
         function preload()
@@ -73,27 +77,44 @@
         function create ()
         {
             graphics = this.add.graphics();
+            sidepanel = this.add.graphics();
 
-            play = this.add.image(60, 360, 'play');
-            play.setInteractive().on('pointerdown', () => playpause());
-            play.visible = false;
+            sidepanel.fillStyle(0x444444, 1);
+            sidepanel.fillRect(0, 0, 110, 900);
+            sidepanel.fillStyle(0x777777, 1);
+            sidepanel.fillRect(10, 10, 90, 90);
+            sidepanel.fillRect(10, 210, 90, 90);
+            sidepanel.fillRect(10, 410, 90, 90);
+            sidepanel.fillRect(10, 510, 90, 90);
+            sidepanel.fillRect(10, 610, 90, 90);
+            sidepanel.fillRect(10, 710, 90, 90);
 
-            pause = this.add.image(60, 360, 'pause');
-            pause.setInteractive().on('pointerdown', () => playpause());
-            
-            var restart = this.add.image(60, 660, 'restart');
-            restart.setInteractive().on('pointerdown', () => restartfn());
-            
-            var upload = this.add.image(60, 160, 'upload');
+            const x_button_position = 55;
+
+            var upload = this.add.image(x_button_position, 55, 'upload');
             upload.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
 
-            var swit = this.add.image(60, 260, 'switch');
-            restart.setInteractive().on('pointerdown', () => restartfn());
+            var swit = this.add.image(x_button_position, 255, 'switch');
+            swit.setInteractive().on('pointerdown', () => restartfn());
 
-            var ff = this.add.image(60, 460, 'ff');
+            play = this.add.image(x_button_position, 455, 'play');
+            play.setInteractive().on('pointerdown', () => playpause());
+
+            pause = this.add.image(x_button_position, 455, 'pause');
+            pause.setInteractive().on('pointerdown', () => playpause());
+            pause.visible = false;
+
+            var restart = this.add.image(x_button_position, 755, 'restart');
+            restart.setInteractive().on('pointerdown', () => restartfn());
+            
+
+
+
+
+            var ff = this.add.image(x_button_position, 555, 'ff');
             ff.setInteractive().on('pointerdown', () => speedup());
 
-            var rw = this.add.image(60, 560, 'rw');
+            var rw = this.add.image(x_button_position, 655, 'rw');
             rw.setInteractive().on('pointerdown', () => slowdown());
 
         }
@@ -122,18 +143,17 @@
 
         function update ()
         {
-            if (MIDI_LOADED){
-                if(!PAUSED){
-                    tick = tick + TICKRATE;
-                }
-                
-            };
-
-
             graphics.clear();
             draw_white_keys();
-            draw_notes();
             draw_black_keys();
+
+            if (!PAUSED) {
+                tick = tick + TICKRATE;
+            }
+
+            if (MIDI_LOADED){
+                draw_notes();
+            }
 
         }
 
@@ -142,13 +162,13 @@
             graphics.fillStyle(0xffffff, 1);
 
             for (let i = 0; i < 52; i++) {
-                graphics.fillRect((i*30)+22, 760, 25, 140);
+                graphics.fillRect((i*30)+128, 760, 25, 135);
             } 
         }
 
         function draw_black_keys ()
         {
-            graphics.fillStyle(0x222222, 1);
+            graphics.fillStyle(0x333333, 1);
 
             black_keys_order = ['y',
             'n', 'y', 'y', 'n', 'y', 'y', 'y',
@@ -161,36 +181,67 @@
 
             for (let i = 0; i < 52; i++) {
                 if (black_keys_order[i] == 'y'){
-                    graphics.fillRect((i*30)+41, 760, 17, 95);
+                    graphics.fillRect((i*30)+147, 760, 17, 90);
                 }
             }  
         }
 
         function draw_notes ()
         {
-            midi.forEach(function(item, index, array) {
-                note = item[0]
-                start = item[1]
-                duration = item[2]
+            for (note of MIDI.tracks[0].notes)
+            {
+                x = ((note.midi-38)*30)+147;
+                y = tick - note.ticks - note.durationTicks;
 
-                x = (note*30)+22
-                y = tick - start - duration
-
-                // THE FALLING NOTE, STOPS WHEN THE TOP OF THE BAR HITS THE PIANO
                 if (y < 760){
                     graphics.fillStyle(0xa5fed2, 1);
-                    graphics.fillRect(x, y, 25, duration);
+                    graphics.fillRect(x, y, 25, note.durationTicks);
                 }
 
-                if (tick - start > 760){
-                    if (y < 760){
-                        graphics.fillStyle(0xa5fed2, 1);
-                        graphics.fillRect(x, 760, 25, 140);
-                    }
-                }
-            })  
+                active_key((note.midi - 20))
+            }
+            // midi.forEach(function(item, index, array) {
+            //     note = item[0]
+            //     start = item[1]
+            //     duration = item[2]
+
+            //     x = (note*30)+22
+            //     y = tick - start - duration
+
+            //     // THE FALLING NOTE, STOPS WHEN THE TOP OF THE BAR HITS THE PIANO
+            //     if (y < 760){
+            //         graphics.fillStyle(0xa5fed2, 1);
+            //         graphics.fillRect(x, y, 25, duration);
+            //     }
+
+            //     if (tick - start > 760){
+            //         if (y < 760){
+            //             active_key(note);
+            //             // graphics.fillStyle(0xa5fed2, 1);
+            //             // graphics.fillRect(x, 760, 25, 140);
+            //         }
+            //     }
+            // })  
 
         }
+
+
+        var ACTIVE_TRACK = 0;
+
+        function active_key(note)
+        {
+            black_notes = [2,5,7,10,12,14,17,19,22,24,26,29,31,34,36,38,41,43,46,48,50,53,55,58,60,62,65,67,70,72,74,77,79,82,84,86]
+
+            if (black_notes.includes(note))
+            {
+                graphics.fillStyle(0x62B38A, 1);
+                graphics.fillRect((note*30)+147, 760, 17, 90);
+            } else {
+                graphics.fillStyle(0xa5fed2, 1);
+                graphics.fillRect((note*30)+128, 760, 25, 135);
+            }
+        }
+
     </script>
 </body>
 </html>
