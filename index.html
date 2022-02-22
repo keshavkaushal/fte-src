@@ -5,7 +5,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
     <!--     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.36/Tone.min.js" integrity="sha512-6EwXyUr/E8qXmKzIejsvIHRKKq+KFuQ4YvEJgXI9Ketvi2x5zMIIX5Y/v9OEKoZ9RuGYaOMI0UHRrsMEau+Kgw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
 </head>
-<body style="margin: 1px; overflow: hidden;">
+<body style="margin: 1px; overflow: hidden; background: #000">
     <input style="display:none" type="file" id="filereader">
     <script>
 
@@ -16,36 +16,91 @@
 
         // SCRIPT TO LISTEN FOR NEW MIDIs
         var MIDI;
-        var timeDivision
+        var timeDivision;
         
-        var NOTES = {};
-        const black = [1, 4, 6, 9, 11, 13, 16, 18, 21, 23, 25, 28, 30, 33, 35, 37, 40, 42, 45, 47, 49, 52, 54, 57, 59, 61, 64, 66, 69, 71, 73, 76, 78, 81, 83, 85];
-        const white = [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22, 24, 26, 27, 29, 31, 32, 34, 36, 38, 39, 41, 43, 44, 46, 48, 50, 51, 53, 55, 56, 58, 60, 62, 63, 65, 67, 68, 70, 72, 74, 75, 77, 79, 80, 82, 84, 86, 87]
+        var the_keys = Array(88).fill([])
 
-        document.getElementById("filereader").onchange = function (e) {
+        function make_the_keys_map(){
 
-            if (e.target.files.length > 0){
+            const black = [1, 4, 6, 9, 11, 13, 16, 18, 21, 23, 25, 28, 30, 33, 35, 37, 40, 42, 45, 47, 49, 52, 54, 57, 59, 61, 64, 66, 69, 71, 73, 76, 78, 81, 83, 85];
+            const white = [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22, 24, 26, 27, 29, 31, 32, 34, 36, 38, 39, 41, 43, 44, 46, 48, 50, 51, 53, 55, 56, 58, 60, 62, 63, 65, 67, 68, 70, 72, 74, 75, 77, 79, 80, 82, 84, 86, 87];
 
+            for (let i = 0; i < 52; i++)
+            {
+                the_keys[white[i]] = [0, (i*30.7)+5, 760, 25, 135];
+            }
+
+            black_keys_order = [
+            'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y',
+            'n', 'y', 'y', 'n', 'y', 'y', 'y'
+            ];
+
+            counter = 0;
+
+            for (let i = 0; i < 52; i++)
+            {
+                if (black_keys_order[i] == 'y')
+                {
+                    the_keys[black[counter]] = [1, (i*30.7)+25, 760, 17, 90]
+                    counter ++
+                }
+            }  
+        }
+
+        function just_white()
+        {
+            graphics.fillStyle(0xffffff, 1);
+            for (key of the_keys)
+            {
+                if (key[0] === 0)
+                {
+                    graphics.fillRect(key[1], key[2], key[3], key[4])
+                }
+            }
+        }
+
+        function just_black()
+        {
+            graphics.fillStyle(0x333333, 1);
+            for (key of the_keys)
+            {
+                if (key[0] === 1)
+                {
+                    graphics.fillRect(key[1], key[2], key[3], key[4])
+                }
+            }
+        }
+
+        document.getElementById("filereader").onchange = function(e)
+        {
+            if (e.target.files.length > 0)
+            {
                 const reader = new FileReader();
-
-                reader.onload = function(e) {
+                reader.onload = function(e)
+                {
                     MIDI = new Midi(e.target.result);
                     MIDI_LOADED = true;
-                    console.log(MIDI);
                     playpause();
+                    console.log(MIDI)
                 }
-
                 reader.readAsArrayBuffer(e.target.files[0]);
             }
         }
 
         var config = {
             type: Phaser.AUTO,
+            backgroundColor: '#222',
             scale: {
                 mode: Phaser.Scale.FIT,
                 parent: 'phaser-example',
                 autoCenter: Phaser.Scale.CENTER_BOTH,
-                width: 1700,
+                width: 1600,
                 height: 900
             },
             scene: {
@@ -58,13 +113,16 @@
         var MIDI_LOADED = false;
         var TICKRATE = 1;
         var PAUSED = true;
+        var ACTIVE_TRACK = 0;
 
         var pause;
         var play;
 
         var graphics;
         var statics;
-        var tick = 0;
+        var seek_rect;
+        const STARTING_TICK = 700
+        var tick = STARTING_TICK;
         var game = new Phaser.Game(config);
 
         function preload()
@@ -81,51 +139,51 @@
         function create ()
         {
             graphics = this.add.graphics();
-            sidepanel = this.add.graphics();
+            statics = this.add.graphics();
+            seek_rect = this.add.graphics();
 
-            sidepanel.fillStyle(0x444444, 1);
-            sidepanel.fillRect(0, 0, 110, 900);
-            sidepanel.fillStyle(0x777777, 1);
-            sidepanel.fillRect(10, 10, 90, 90);
-            sidepanel.fillRect(10, 210, 90, 90);
-            sidepanel.fillRect(10, 410, 90, 90);
-            sidepanel.fillRect(10, 510, 90, 90);
-            sidepanel.fillRect(10, 610, 90, 90);
-            sidepanel.fillRect(10, 710, 90, 90);
+            make_the_keys_map();
 
-            const x_button_position = 55;
+            graphics.fillStyle(0x111111, 1);
+            graphics.fillRect(0, 758, 1600, 142)
+            just_white();
+            just_black();
 
-            var upload = this.add.image(x_button_position, 55, 'upload');
+            statics.fillStyle(0x444444, 1);
+            statics.fillRect(0, 0, 1600, 100);
+            
+            graphics.fillStyle(0x333333, 1);
+            graphics.fillRect(0, 100, 1600, 100);
+
+            const y_button_position = 50;
+
+            var upload = this.add.image(50, y_button_position, 'upload');
             upload.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
 
-            var swit = this.add.image(x_button_position, 255, 'switch');
+            var swit = this.add.image(150, y_button_position, 'switch');
             swit.setInteractive().on('pointerdown', () => restartfn());
 
-            play = this.add.image(x_button_position, 455, 'play');
+            play = this.add.image(850, y_button_position, 'play');
             play.setInteractive().on('pointerdown', () => playpause());
 
-            pause = this.add.image(x_button_position, 455, 'pause');
+            pause = this.add.image(850, y_button_position, 'pause');
             pause.setInteractive().on('pointerdown', () => playpause());
             pause.visible = false;
 
-            var restart = this.add.image(x_button_position, 755, 'restart');
+            var restart = this.add.image(750, y_button_position, 'restart');
             restart.setInteractive().on('pointerdown', () => restartfn());
             
-
-
-
-
-            var ff = this.add.image(x_button_position, 555, 'ff');
+            var ff = this.add.image(1550, y_button_position, 'ff');
             ff.setInteractive().on('pointerdown', () => speedup());
 
-            var rw = this.add.image(x_button_position, 655, 'rw');
+            var rw = this.add.image(1450, y_button_position, 'rw');
             rw.setInteractive().on('pointerdown', () => slowdown());
-
         }
+
 
         function restartfn ()
         {
-            tick = 0;
+            tick = STARTING_TICK;
         }
 
         function speedup ()
@@ -147,87 +205,120 @@
 
         function update ()
         {
-            graphics.clear();
-            draw_white_keys();
-            draw_black_keys();
+            if (MIDI_LOADED)
+            {
+                graphics.clear();
+                
+                vn_ak = get_visible_notes_and_active_keys();
+                visible_notes = vn_ak[0]
+                active_keys = vn_ak[1]
+
+                falling_notes(visible_notes);
+                graphics.fillStyle(0x111111, 1);
+                graphics.fillRect(0, 758, 1600, 142)
+                
+                just_white();
+                
+                graphics.fillStyle(0xa5fed2, 1);
+                active_white(active_keys);
+
+                just_black();
+
+                graphics.fillStyle(0x62B38A, 1);
+                active_black(active_keys);
+
+                // SEEK POSITION CALC
+                graphics.fillStyle(0x333333, 1);
+                graphics.fillRect(0, 100, 1600, 100);
+                graphics.fillStyle(0x555555, 1);
+
+                seek_point = tick / MIDI.durationTicks * 1600
+
+                graphics.fillRect(0, 100, seek_point, 100);
+
+                if (tick === MIDI.durationTicks)
+                {
+                    playpause();
+                }
+            }
 
             if (!PAUSED) {
                 tick = tick + TICKRATE;
             }
-
-            if (MIDI_LOADED){
-                draw_notes();
-            }
-
         }
 
-        function draw_white_keys ()
+        function get_visible_notes_and_active_keys()
         {
-            graphics.fillStyle(0xffffff, 1);
+            visible_notes = []
+            active_keys = []
 
-            for (let i = 0; i < 52; i++) {
-                graphics.fillRect((i*30)+128, 760, 25, 135);
-            }
-        }
-
-        function draw_black_keys ()
-        {
-            graphics.fillStyle(0x333333, 1);
-
-            black_keys_order = ['y',
-            'n', 'y', 'y', 'n', 'y', 'y', 'y',
-            'n', 'y', 'y', 'n', 'y', 'y', 'y',
-            'n', 'y', 'y', 'n', 'y', 'y', 'y',
-            'n', 'y', 'y', 'n', 'y', 'y', 'y',
-            'n', 'y', 'y', 'n', 'y', 'y', 'y',
-            'n', 'y', 'y', 'n', 'y', 'y', 'y',
-            'n', 'y', 'y', 'n', 'y', 'y', 'y',]
-
-            for (let i = 0; i < 52; i++) {
-                if (black_keys_order[i] == 'y'){
-                    graphics.fillRect((i*30)+147, 760, 17, 90);
-                }
-            }  
-        }
-
-        function draw_notes ()
-        {
-            for (note of MIDI.tracks[0].notes)
+            for (note of MIDI.tracks[ACTIVE_TRACK].notes)
             {
-                x = ((note.midi-38)*30)+147;
-                y = tick - note.ticks - note.durationTicks;
+                bottom_of_note = tick - note.ticks;
+                top_of_note = bottom_of_note - note.durationTicks;
 
-                if (y < 760){
-                    graphics.fillStyle(0xa5fed2, 1);
-                    graphics.fillRect(x, y, 25, note.durationTicks);
+                if (bottom_of_note > 200)
+                {
+                    if (top_of_note < 758) {
+                        visible_notes.push(note)
+                    }
+                    
                 }
-
-                if (y + note.durationTicks > 760){
-                    if (y < 760){
-                        active_key(note.midi)
+                if (bottom_of_note > 758)
+                {
+                    if (top_of_note < 758)
+                    {
+                        active_keys.push(note)
                     }
                 }
-                
             }
+            return [visible_notes, active_keys];
         }
 
-
-        var ACTIVE_TRACK = 0;
-
-        function active_key(midiNote)
+        function falling_notes(visible_notes)
         {
-            noteIndex = midiNote - 21;
-
-            if (black.includes(noteIndex))
+            for (note of visible_notes)
             {
-                graphics.fillStyle(0x62B38A, 1);
-                graphics.fillRect((noteIndex*30)+147, 760, 17, 90);
-            } else {
-                graphics.fillStyle(0xa5fed2, 1);
-                graphics.fillRect((noteIndex*30)+128, 760, 25, 135);
+                the_key = the_keys[note.midi - 21]
+                x = the_key[1];
+                y = tick - note.ticks - note.durationTicks;
+
+                if (the_key[0] === 1)
+                {
+                    graphics.fillStyle(0x62B38A, 1);
+                    graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks);
+                } else {
+                    graphics.fillStyle(0xa5fed2, 1);
+                    graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks);
+                }
             }
         }
 
+        function active_white(active_keys)
+        {
+            for (key of active_keys)
+            {
+                the_key = the_keys[key.midi - 21]
+
+                if (the_key[0] === 0)
+                {
+                    graphics.fillRect(the_key[1], the_key[2], the_key[3], the_key[4]);
+                }
+            }
+        }
+
+        function active_black(active_keys)
+        {
+            for (key of active_keys)
+            {
+                the_key = the_keys[key.midi - 21]
+
+                if (the_key[0] === 1)
+                {
+                    graphics.fillRect(the_key[1], the_key[2], the_key[3], the_key[4]);
+                }
+            }
+        }
     </script>
 </body>
 </html>
