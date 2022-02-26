@@ -2,22 +2,54 @@
 <html>
 <head>
     <script src="phaser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
-    <!--     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.36/Tone.min.js" integrity="sha512-6EwXyUr/E8qXmKzIejsvIHRKKq+KFuQ4YvEJgXI9Ketvi2x5zMIIX5Y/v9OEKoZ9RuGYaOMI0UHRrsMEau+Kgw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
+    <script src="Midi.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.36/Tone.min.js" integrity="sha512-6EwXyUr/E8qXmKzIejsvIHRKKq+KFuQ4YvEJgXI9Ketvi2x5zMIIX5Y/v9OEKoZ9RuGYaOMI0UHRrsMEau+Kgw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body style="margin: 1px; overflow: hidden; background: #000">
     <input style="display:none" type="file" id="filereader">
     <script>
 
-        // const synth = new Tone.Synth().toDestination();
+        const synth = new Tone.PolySynth().toDestination();
+        const sampler = new Tone.Sampler({
+            urls: {
+                A0: "A0.mp3",
+                C1: "C1.mp3",
+                "D#1": "Ds1.mp3",
+                "F#1": "Fs1.mp3",
+                A1: "A1.mp3",
+                C2: "C2.mp3",
+                "D#2": "Ds2.mp3",
+                "F#2": "Fs2.mp3",
+                A2: "A2.mp3",
+                C3: "C3.mp3",
+                "D#3": "Ds3.mp3",
+                "F#3": "Fs3.mp3",
+                A3: "A3.mp3",
+                C4: "C4.mp3",
+                "D#4": "Ds4.mp3",
+                "F#4": "Fs4.mp3",
+                A4: "A4.mp3",
+                C5: "C5.mp3",
+                "D#5": "Ds5.mp3",
+                "F#5": "Fs5.mp3",
+                A5: "A5.mp3",
+                C6: "C6.mp3",
+                "D#6": "Ds6.mp3",
+                "F#6": "Fs6.mp3",
+                A6: "A6.mp3",
+                C7: "C7.mp3",
+                "D#7": "Ds7.mp3",
+                "F#7": "Fs7.mp3",
+                A7: "A7.mp3",
+                C8: "C8.mp3"
+            },
+            release: 1,
+            baseUrl: "https://tonejs.github.io/audio/salamander/"
+        }).toDestination();
 
-        //play a middle 'C' for the duration of an 8th note
-        // synth.triggerAttackRelease("C4", "8n");
-
-        // SCRIPT TO LISTEN FOR NEW MIDIs
         var MIDI;
         var timeDivision;
-        
+        var colours = [[0xff0000, 0xaa0000],[0x00ff00, 0x00aa00], [0x0000ff, 0x0000aa]]
         var the_keys = Array(88).fill([])
 
         function make_the_keys_map(){
@@ -86,8 +118,11 @@
                 {
                     MIDI = new Midi(e.target.result);
                     MIDI_LOADED = true;
-                    playpause();
-                    console.log(MIDI)
+                    tick = STARTING_TICK;
+                    TICKRATE = 1
+                    if (PAUSED) {
+                        playpause();
+                    }
                 }
                 reader.readAsArrayBuffer(e.target.files[0]);
             }
@@ -114,14 +149,15 @@
         var TICKRATE = 1;
         var PAUSED = true;
         var ACTIVE_TRACK = 0;
-
+        var triggered_notes = new Set();
+        var prev_active_keys = [];
         var pause;
         var play;
 
         var graphics;
         var statics;
         var seek_rect;
-        const STARTING_TICK = 700
+        const STARTING_TICK = 0
         var tick = STARTING_TICK;
         var game = new Phaser.Game(config);
 
@@ -133,7 +169,7 @@
             this.load.image('upload', '/upload.png');
             this.load.image('ff', '/ff.png');
             this.load.image('rw', '/rw.png');
-            this.load.image('switch', '/switch.png');
+            this.load.image('seekbar', '/seekbar.png');
         }
 
         function create ()
@@ -151,17 +187,14 @@
 
             statics.fillStyle(0x444444, 1);
             statics.fillRect(0, 0, 1600, 100);
-            
+
             graphics.fillStyle(0x333333, 1);
             graphics.fillRect(0, 100, 1600, 100);
-
+            
             const y_button_position = 50;
 
             var upload = this.add.image(50, y_button_position, 'upload');
             upload.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
-
-            var swit = this.add.image(150, y_button_position, 'switch');
-            swit.setInteractive().on('pointerdown', () => restartfn());
 
             play = this.add.image(850, y_button_position, 'play');
             play.setInteractive().on('pointerdown', () => playpause());
@@ -178,8 +211,16 @@
 
             var rw = this.add.image(1450, y_button_position, 'rw');
             rw.setInteractive().on('pointerdown', () => slowdown());
-        }
 
+
+            var seekbar = this.add.image(800, 150, 'seekbar');
+            seekbar.setInteractive().on('pointerdown', function (pointer) {
+                if (MIDI_LOADED)
+                {
+                    tick = (pointer.worldX / 1600) * MIDI.durationTicks;
+                }
+            });
+        }
 
         function restartfn ()
         {
@@ -208,10 +249,13 @@
             if (MIDI_LOADED)
             {
                 graphics.clear();
-                
+                seek_rect.clear();
+
                 vn_ak = get_visible_notes_and_active_keys();
                 visible_notes = vn_ak[0]
                 active_keys = vn_ak[1]
+                
+                trigger_notes(active_keys)
 
                 falling_notes(visible_notes);
                 graphics.fillStyle(0x111111, 1);
@@ -227,18 +271,20 @@
                 graphics.fillStyle(0x62B38A, 1);
                 active_black(active_keys);
 
-                // SEEK POSITION CALC
+                seek_point = (tick - STARTING_TICK) / MIDI.durationTicks * 1600
+
                 graphics.fillStyle(0x333333, 1);
                 graphics.fillRect(0, 100, 1600, 100);
                 graphics.fillStyle(0x555555, 1);
-
-                seek_point = tick / MIDI.durationTicks * 1600
-
                 graphics.fillRect(0, 100, seek_point, 100);
 
-                if (tick === MIDI.durationTicks)
+                if (tick > MIDI.durationTicks)
                 {
-                    playpause();
+                    if (!PAUSED)
+                    {
+                        playpause();
+                    }
+                    
                 }
             }
 
@@ -251,28 +297,76 @@
         {
             visible_notes = []
             active_keys = []
+            var track_counter = 0;
 
-            for (note of MIDI.tracks[ACTIVE_TRACK].notes)
+            for (track of MIDI.tracks)
             {
-                bottom_of_note = tick - note.ticks;
-                top_of_note = bottom_of_note - note.durationTicks;
+                for (note of track.notes)
+                {
+                    note["track"] = track_counter;
 
-                if (bottom_of_note > 200)
-                {
-                    if (top_of_note < 758) {
-                        visible_notes.push(note)
-                    }
-                    
-                }
-                if (bottom_of_note > 758)
-                {
-                    if (top_of_note < 758)
+                    bottom_of_note = tick - note.ticks;
+                    top_of_note = bottom_of_note - note.durationTicks;
+
+                    if (bottom_of_note > 200)
                     {
-                        active_keys.push(note)
+                        if (top_of_note < 758) {
+                            visible_notes.push(note)
+                        }
+
+                    }
+                    if (bottom_of_note > 758)
+                    {
+                        if (top_of_note < 758)
+                        {
+                            active_keys.push(note)
+                            
+                        }
                     }
                 }
+
+                track_counter ++
             }
+
             return [visible_notes, active_keys];
+        }
+
+        
+
+        function trigger_notes(active_keys)
+        {
+            var difference = new Set()
+
+            if (prev_active_keys) {
+                var act = new Set(active_keys)
+                var pre = new Set(prev_active_keys)
+
+                difference = new Set([...act].filter(x => !pre.has(x)));
+            } else {
+                difference = new Set(active_keys)
+            }
+            prev_active_keys = [...active_keys]
+            
+            if (difference.size > 0)
+            {
+                console.log(difference)
+
+                var frequencies_to_play = []
+
+                for (newnote of difference) {
+                    power = (newnote.midi - 69) / 12
+                    frequency = Math.pow(2, power) * 440
+                    frequencies_to_play.push(frequency)
+                }
+
+                console.log(frequencies_to_play)
+                if (!PAUSED){
+                    sampler.triggerAttackRelease(frequencies_to_play, 0.4);
+                }
+                // 
+            }
+            
+            // synth.triggerAttackRelease(["C4", "E4"], 1);
         }
 
         function falling_notes(visible_notes)
@@ -282,15 +376,9 @@
                 the_key = the_keys[note.midi - 21]
                 x = the_key[1];
                 y = tick - note.ticks - note.durationTicks;
-
-                if (the_key[0] === 1)
-                {
-                    graphics.fillStyle(0x62B38A, 1);
-                    graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks);
-                } else {
-                    graphics.fillStyle(0xa5fed2, 1);
-                    graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks);
-                }
+                
+                graphics.fillStyle(colours[note.track][the_key[0]])
+                graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks);
             }
         }
 
@@ -302,6 +390,7 @@
 
                 if (the_key[0] === 0)
                 {
+                    graphics.fillStyle(colours[key.track][0])
                     graphics.fillRect(the_key[1], the_key[2], the_key[3], the_key[4]);
                 }
             }
@@ -315,6 +404,7 @@
 
                 if (the_key[0] === 1)
                 {
+                    graphics.fillStyle(colours[key.track][1])
                     graphics.fillRect(the_key[1], the_key[2], the_key[3], the_key[4]);
                 }
             }
