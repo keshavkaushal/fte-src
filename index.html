@@ -309,13 +309,18 @@
                     bottom_of_note = tick - note.ticks;
                     top_of_note = bottom_of_note - note.durationTicks;
 
-                    if (bottom_of_note > 200)
-                    {
-                        if (top_of_note < 758) {
-                            visible_notes.push(note)
-                        }
+                    // if (bottom_of_note > 200)
+                    // {
+                    //     if (top_of_note < 758) {
+                    //         visible_notes.push(note)
+                    //     }
 
-                    }
+                    // }
+                    
+
+                    //asdflksajdf
+                    visible_notes.push(note)
+
                     if (bottom_of_note > 758)
                     {
                         if (top_of_note < 758)
@@ -371,10 +376,10 @@
             {
                 the_key = the_keys[note.midi - 21]
                 x = the_key[1];
-                y = tick - note.ticks - note.durationTicks;
+                y = tick/4+565 - note.ticks/4 - note.durationTicks/4;
                 
                 graphics.fillStyle(colours[note.track][the_key[0]])
-                graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks);
+                graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks/4);
             }
         }
 
