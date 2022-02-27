@@ -49,7 +49,7 @@
 
         var MIDI;
         var timeDivision;
-        var colours = [[0xff0000, 0xaa0000],[0x00ff00, 0x00aa00], [0x0000ff, 0x0000aa]]
+        var colours = [[0x908be1, 0x4d3cbf], [0xa5fed2, 0x35c375],[0x908be1, 0x4d3cbf], [0xa5fed2, 0x35c375],[0x908be1, 0x4d3cbf], [0xa5fed2, 0x35c375]]
         var the_keys = Array(88).fill([])
 
         function make_the_keys_map(){
@@ -119,7 +119,8 @@
                     MIDI = new Midi(e.target.result);
                     MIDI_LOADED = true;
                     tick = STARTING_TICK;
-                    TICKRATE = 1
+                    TICKRATE = (MIDI.durationTicks / MIDI.duration) / 60
+                    console.log(MIDI)
                     if (PAUSED) {
                         playpause();
                     }
@@ -349,7 +350,6 @@
             
             if (difference.size > 0)
             {
-                console.log(difference)
 
                 var frequencies_to_play = []
 
@@ -359,14 +359,10 @@
                     frequencies_to_play.push(frequency)
                 }
 
-                console.log(frequencies_to_play)
                 if (!PAUSED){
-                    sampler.triggerAttackRelease(frequencies_to_play, 0.4);
+                    sampler.triggerAttackRelease(frequencies_to_play, 0.2);
                 }
-                // 
             }
-            
-            // synth.triggerAttackRelease(["C4", "E4"], 1);
         }
 
         function falling_notes(visible_notes)
