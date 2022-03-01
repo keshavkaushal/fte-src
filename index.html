@@ -175,11 +175,26 @@
 
         function create ()
         {
+            seek_rect = this.add.graphics();
             graphics = this.add.graphics();
             statics = this.add.graphics();
-            seek_rect = this.add.graphics();
 
             make_the_keys_map();
+
+            // THE BARS TO HELP VIEWING NOTES
+            seek_rect.fillStyle(0x555555, 1);
+            var c_line = 65
+            for (var i = 0; i < 8; i++) {
+                seek_rect.fillRect(c_line, 0, 1, 900);
+                c_line += 215
+            }
+            
+            seek_rect.fillStyle(0x333333, 1);
+            var e_line = 157
+            for (var i = 0; i < 8; i++) {
+                seek_rect.fillRect(e_line, 0, 1, 900);
+                e_line += 215
+            }
 
             graphics.fillStyle(0x111111, 1);
             graphics.fillRect(0, 758, 1600, 142)
@@ -188,6 +203,9 @@
 
             statics.fillStyle(0x444444, 1);
             statics.fillRect(0, 0, 1600, 100);
+
+
+
 
             graphics.fillStyle(0x333333, 1);
             graphics.fillRect(0, 100, 1600, 100);
@@ -250,7 +268,6 @@
             if (MIDI_LOADED)
             {
                 graphics.clear();
-                seek_rect.clear();
 
                 vn_ak = get_visible_notes_and_active_keys();
                 visible_notes = vn_ak[0]
@@ -265,12 +282,12 @@
                 just_white();
                 
                 graphics.fillStyle(0xa5fed2, 1);
-                active_white(active_keys);
+                active_white(active_keys, visible_notes);
 
                 just_black();
 
                 graphics.fillStyle(0x62B38A, 1);
-                active_black(active_keys);
+                active_black(active_keys, visible_notes);
 
                 seek_point = (tick - STARTING_TICK) / MIDI.durationTicks * 1600
 
@@ -309,17 +326,13 @@
                     bottom_of_note = tick - note.ticks;
                     top_of_note = bottom_of_note - note.durationTicks;
 
-                    // if (bottom_of_note > 200)
-                    // {
-                    //     if (top_of_note < 758) {
-                    //         visible_notes.push(note)
-                    //     }
+                    if (bottom_of_note > -2000)
+                    {
+                        if (top_of_note < 758) {
+                            visible_notes.push(note)
+                        }
 
-                    // }
-                    
-
-                    //asdflksajdf
-                    visible_notes.push(note)
+                    }
 
                     if (bottom_of_note > 758)
                     {
@@ -365,7 +378,7 @@
                 }
 
                 if (!PAUSED){
-                    sampler.triggerAttackRelease(frequencies_to_play, 0.2);
+                    sampler.triggerAttackRelease(frequencies_to_play, 0.6);
                 }
             }
         }
@@ -376,14 +389,14 @@
             {
                 the_key = the_keys[note.midi - 21]
                 x = the_key[1];
-                y = tick/4+565 - note.ticks/4 - note.durationTicks/4;
+                y = tick/5+610 - note.ticks/5 - note.durationTicks/5;
                 
                 graphics.fillStyle(colours[note.track][the_key[0]])
-                graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks/4);
+                graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks/5 - 5);
             }
         }
 
-        function active_white(active_keys)
+        function active_white(active_keys, visible_notes)
         {
             for (key of active_keys)
             {
@@ -391,13 +404,13 @@
 
                 if (the_key[0] === 0)
                 {
-                    graphics.fillStyle(colours[key.track][0])
+                    graphics.fillStyle(colours[key.track][0], 1)
                     graphics.fillRect(the_key[1], the_key[2], the_key[3], the_key[4]);
                 }
             }
         }
 
-        function active_black(active_keys)
+        function active_black(active_keys, visible_notes)
         {
             for (key of active_keys)
             {
