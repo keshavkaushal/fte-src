@@ -164,7 +164,7 @@
 
         function preload()
         {
-            this.load.image('play', '/play.png');
+            this.load.image('play', '/playtext.png');
             this.load.image('pause', '/pause.png');
             this.load.image('restart', '/restart.png');
             this.load.image('upload', '/upload.png');
@@ -183,16 +183,16 @@
 
             // THE BARS TO HELP VIEWING NOTES
             seek_rect.fillStyle(0x555555, 1);
-            var c_line = 65
+            var c_line = 64
             for (var i = 0; i < 8; i++) {
-                seek_rect.fillRect(c_line, 0, 1, 900);
+                seek_rect.fillRect(c_line, 0, 2, 900);
                 c_line += 215
             }
             
             seek_rect.fillStyle(0x333333, 1);
-            var e_line = 157
+            var e_line = 156
             for (var i = 0; i < 8; i++) {
-                seek_rect.fillRect(e_line, 0, 1, 900);
+                seek_rect.fillRect(e_line, 0, 2, 900);
                 e_line += 215
             }
 
@@ -204,13 +204,14 @@
             statics.fillStyle(0x444444, 1);
             statics.fillRect(0, 0, 1600, 100);
 
-
-
-
             graphics.fillStyle(0x333333, 1);
             graphics.fillRect(0, 100, 1600, 100);
             
             const y_button_position = 50;
+
+            graphics.fillStyle(0x222222, 1);
+            var upload_midi = statics.fillRect(70, 0, 20, 20)
+            upload_midi.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
 
             var upload = this.add.image(50, y_button_position, 'upload');
             upload.setInteractive().on('pointerdown', () => document.getElementById('filereader').click());
