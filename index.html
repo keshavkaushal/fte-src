@@ -50,7 +50,7 @@
         var seek_rect;
         var tick = 0;
         var MIDI;
-        var colours = [[0xFFD5CD, 0xFFD5CD], [0xC3AED6, 0xC3AED6], [0xEFBBCF, 0xEFBBCF], [0x8675A9, 0x8675A9]]
+        var colours = [[0xA3D2CA, 0x5EAAA8], [0xA685E2, 0x6155A6], [0xF2AAAA, 0xE36387], [0x8B5E83, 0xD6B0B1]]
         var the_keys = Array(88).fill([])
         
         var game = new Phaser.Game(config);
@@ -181,7 +181,7 @@
                 for (in_note of in_track.notes) {
                     if (shortest_note)
                     {
-                        if (in_note.durationTicks < shortest_note)
+                        if (in_note.durationTicks < shortest_note && in_note.durationTicks > 4)
                         {
                             shortest_note = in_note.durationTicks;
                         }
@@ -191,8 +191,9 @@
                 }
             }
 
-            // RESIZE THE ENTIRE MIDI BY NORMALISING THE SHORTEST NOTE TO BE A DURATION OF '10'
-            resize_factor = 25 / shortest_note
+            console.log(shortest_note)
+            // RESIZE THE ENTIRE MIDI BY NORMALISING THE SHORTEST NOTE
+            resize_factor = 20 / shortest_note
 
             end_midi = {
                 "tracks": [],
@@ -253,33 +254,32 @@
             just_white();
             just_black();
 
-            statics.fillStyle(0x444444, 0.8);
+            statics.fillStyle(0x111111, 0.8);
             statics.fillRect(0, 0, 1600, 100);
 
             graphics.fillStyle(0x333333, 1);
-            // seeker = graphics.fillRect(0, 100, 1600, 100);
             seeker = this.add.rectangle(800, 150, 1600, 100, 0x333333, 0.5);
             const y_button_position = 50;
 
 
-            var text = this.add.text(30, 15, "UPLOAD", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
+            var text = this.add.text(30, 15, " Upload ", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
             text.setInteractive().on('pointerdown', () => upload_trigger());
 
-            playpau = this.add.text(650, 15, "PLAY/PAUSE", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
+            playpau = this.add.text(650, 15, "Play/Pause", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
             playpau.setInteractive().on('pointerdown', () => playpause());
             
-            this.add.text(1220, 15, "SPEED:", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
+            this.add.text(1220, 15, "Speed:", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
 
             ff = this.add.text(1530, 10, ">>", { font: "120px arcade", fill: "#FFFFFF", align: "center"});
             ff.setInteractive().on('pointerdown', () => speedup());
 
-            rw = this.add.text(1430, 10, "<<", { font: "120px arcade", fill: "#FFFFFF", align: "center"});
+            rw = this.add.text(1430, 10, ">", { font: "120px arcade", fill: "#FFFFFF", align: "center"});
             rw.setInteractive().on('pointerdown', () => slowdown());
 
             seeker.setInteractive().on('pointerdown', function (pointer) {
                 if (MIDI_LOADED)
                 {
-                    tick = (pointer.worldX / 1600) * MIDI.durationTicks;
+                    tick = (pointer.worldX / 1600) * (MIDI.durationTicks + 758);
                 }
             });
         }
@@ -335,14 +335,14 @@
                 graphics.fillStyle(0x62B38A, 1);
                 active_black(active_keys, visible_notes);
 
-                seek_point = tick / MIDI.durationTicks * 1600
+                seek_point = tick / (MIDI.durationTicks + 758) * 1600
 
                 // graphics.fillStyle(0x333333, 1);
                 // graphics.fillRect(0, 100, 1600, 100);
-                graphics.fillStyle(0x555555, 0.4);
+                graphics.fillStyle(0x999999, 0.3);
                 graphics.fillRect(0, 100, seek_point, 100);
 
-                if (tick > MIDI.durationTicks + 4000)
+                if (tick > MIDI.durationTicks + 758)
                 {
                     if (!PAUSED)
                     {
@@ -373,7 +373,7 @@
                     top_of_note = bottom_of_note - note.durationTicks;
 
                     // if (bottom_of_note > -2000)
-                    if (bottom_of_note > -3000)
+                    if (bottom_of_note > 0)
                     {
                         if (top_of_note < 758) {
                             visible_notes.push(note)
@@ -439,7 +439,7 @@
                 y = tick - note.ticks - note.durationTicks;
                 
                 graphics.fillStyle(colours[note.track][the_key[0]])
-                graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks, 5);
+                graphics.fillRoundedRect(the_key[1], y, the_key[3], note.durationTicks, 4);
             }
         }
 
