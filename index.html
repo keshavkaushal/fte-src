@@ -265,8 +265,14 @@
 
             // BUTTON OUTLINES FOR UPLOAD AND ABOUT
             statics.fillStyle(0x333333, 0.8);
-            statics.fillRoundedRect(10, 10, 180, 80, 5)
-            statics.fillRoundedRect(200, 10, 160, 80, 5)
+            statics.fillRoundedRect(10, 10, 180, 80, 8)
+            statics.fillRoundedRect(200, 10, 160, 80, 8)
+
+            statics.fillRoundedRect(710, 10, 160, 80, 8)
+
+            statics.fillRoundedRect(1510, 10, 80, 80, 8)
+            statics.fillRoundedRect(1300, 10, 200, 80, 8)
+            statics.fillRoundedRect(1210, 10, 80, 80, 8)
 
             // BUTTON OUTLINE FOR PLAY/PAUSE
             playpause_container = this.add.rectangle(800, 50, 160, 80, 5, 0xffffff)
@@ -281,16 +287,15 @@
 
             var about = this.add.text(220, 15, "About", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
 
-            // playpau = this.add.text(650, 15, "Play/Pause", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
-            // playpau.setInteractive().on('pointerdown', () => playpause());
-            
-            reset = this.add.text(1220, 15, "Reset", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
+            this.add.text(1050, 15, "Speed:", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
+
+            reset = this.add.text(1340, 15, "Reset", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
             reset.setInteractive().on('pointerdown', () => reset_speed());
 
-            ff = this.add.text(1530, 10, ">>", { font: "120px arcade", fill: "#FFFFFF", align: "center"});
+            ff = this.add.text(1535, 10, "+", { font: "120px arcade", fill: "#FFFFFF", align: "center"});
             ff.setInteractive().on('pointerdown', () => speedup());
 
-            rw = this.add.text(1430, 10, ">", { font: "120px arcade", fill: "#FFFFFF", align: "center"});
+            rw = this.add.text(1235, 10, "-", { font: "120px arcade", fill: "#FFFFFF", align: "center"});
             rw.setInteractive().on('pointerdown', () => slowdown());
 
             seeker.setInteractive().on('pointerdown', function (pointer) {
