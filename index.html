@@ -7,30 +7,23 @@
 </head>
 <body style="margin: 1px; overflow: hidden; background: #000">
 
-    <style media='screen' type='text/css'>
-          @font-face {
-            font-family: arcade;
-            src: url('thin.ttf');
-            font-weight: 400;
-            font-weight: normal;
-          }
-    </style>
-    <div style="font-family:arcade; position:absolute; left:-1000px; visibility:hidden;">.</div>
     <input style="display:none" type="file" id="filereader">
     <a style="display:none" href="https://keshavkaushal.github.io/piano/" id="aboutpage"/>
     <script>
 
-        // make the piano sounds local / put it in the preload method?
-        // make an app logo
+        // make the piano sounds local?
         // check with flowkey
-        // prioritise ios??
+        // whats a privacy policy
+        // does file upload count as file processing?
+        // get more midi colors so it doesnt crash
+        // file chooser dialog only shows on second press
 
         var config = {
             type: Phaser.AUTO,
             backgroundColor: '#222',
             scale: {
                 mode: Phaser.Scale.FIT,
-                parent: 'phaser-example',
+                // parent: 'phaser-example',
                 autoCenter: Phaser.Scale.CENTER_BOTH,
                 width: 1600,
                 height: 900
@@ -38,12 +31,12 @@
             scene: {
                 create: create,
                 update: update,
-                preload: preload,
             }
         };
 
         var MIDI_LOADED = false;
         var TICKRATE = 1;
+        var update_delta = 0;
         var RESET_TICKRATE = 1; 
         var PAUSED = true;
         var ACTIVE_TRACK = 0;
@@ -61,7 +54,7 @@
         var the_keys = Array(88).fill([])
         
         var game = new Phaser.Game(config);
-
+        
         const synth = new Tone.PolySynth().toDestination();
         const sampler = new Tone.Sampler({
             urls: {
@@ -189,7 +182,7 @@
                 for (in_note of in_track.notes) {
                     if (shortest_note)
                     {
-                        if (in_note.durationTicks < shortest_note && in_note.durationTicks > 4)
+                        if (in_note.durationTicks < shortest_note && in_note.durationTicks > 5)
                         {
                             shortest_note = in_note.durationTicks;
                         }
@@ -199,7 +192,6 @@
                 }
             }
 
-            console.log(shortest_note)
             // RESIZE THE ENTIRE MIDI BY NORMALISING THE SHORTEST NOTE TO BE 20px
             resize_factor = 20 / shortest_note
 
@@ -227,11 +219,6 @@
                 }
             }
             return end_midi
-        }
-
-        function preload()
-        {
-            this.load.image('play', '/playtext.png');
         }
 
         function create ()
@@ -269,41 +256,35 @@
             seeker = this.add.rectangle(800, 150, 1600, 100, 0x333333, 0.5);
             const y_button_position = 50;
 
-            // BUTTON OUTLINES FOR UPLOAD AND ABOUT
-            statics.fillStyle(0x333333, 0.8);
-            statics.fillRoundedRect(10, 10, 180, 80, 8)
-            statics.fillRoundedRect(200, 10, 160, 80, 8)
-
-            statics.fillRoundedRect(710, 10, 160, 80, 8)
-
-            statics.fillRoundedRect(1510, 10, 80, 80, 8)
-            statics.fillRoundedRect(1300, 10, 200, 80, 8)
-            statics.fillRoundedRect(1210, 10, 80, 80, 8)
-
-            // BUTTON OUTLINE FOR PLAY/PAUSE
-            playpause_container = this.add.rectangle(800, 50, 160, 80, 5, 0xffffff)
+            playpause_container = this.add.rectangle(795, 50, 160, 80, 0xffffff, 0.2)
             playpause_container.setInteractive().on('pointerdown', () => playpause());
             
             this.add.triangle(765, 50, 0, 50, 50, 25, 0, 0, 0xffffff)
             this.add.rectangle(820, 50, 15, 55, 0xffffff)
             this.add.rectangle(840, 50, 15, 55, 0xffffff)
 
-            var text = this.add.text(30, 15, "Upload", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
-            text.setInteractive().on('pointerdown', () => upload_trigger());
+            upload_container = this.add.rectangle(100, 50, 180, 80, 0xffffff, 0.2);
+            upload_container.setInteractive().on('pointerdown', () => upload_trigger());
+            text = this.add.text(30, 30, "Upload", { font: "40px", fill: "#FFFFFF", align: "center"});
 
-            var about = this.add.text(220, 15, "About", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
-            about.setInteractive().on('pointerdown', () => load_about());
+            about_container = this.add.rectangle(280, 50, 160, 80, 0xffffff, 0.2);
+            about_container.setInteractive().on('pointerdown', () => load_about());
+            about = this.add.text(220, 30, "About", { font: "40px", fill: "#FFFFFF", align: "center"});
 
-            this.add.text(1050, 15, "Speed:", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
+            this.add.text(1050, 30, "Speed:", { font: "40px", fill: "#FFFFFF", align: "center"});
 
-            reset = this.add.text(1340, 15, "Reset", { font: "100px arcade", fill: "#FFFFFF", align: "center"});
-            reset.setInteractive().on('pointerdown', () => reset_speed());
+            reset_container = this.add.rectangle(1400, 50, 200, 80, 0xffffff, 0.2);
+            reset_container.setInteractive().on('pointerdown', () => reset_speed());
+            this.add.text(1340, 30, "Reset", { font: "40px", fill: "#FFFFFF", align: "center"});
+            
 
-            ff = this.add.text(1535, 10, "+", { font: "120px arcade", fill: "#FFFFFF", align: "center"});
-            ff.setInteractive().on('pointerdown', () => speedup());
+            ff_container = this.add.rectangle(1550, 50, 80, 80, 0xffffff, 0.2);
+            ff_container.setInteractive().on('pointerdown', () => speedup());
+            this.add.text(1532, 22, "+", { font: "60px", fill: "#FFFFFF", align: "center"});
 
-            rw = this.add.text(1235, 10, "-", { font: "120px arcade", fill: "#FFFFFF", align: "center"});
-            rw.setInteractive().on('pointerdown', () => slowdown());
+            rw_container = this.add.rectangle(1250, 50, 80, 80, 0xffffff, 0.2);
+            rw_container.setInteractive().on('pointerdown', () => slowdown());
+            this.add.text(1232, 22, "-", { font: "60px", fill: "#FFFFFF", align: "center"});
 
             seeker.setInteractive().on('pointerdown', function (pointer) {
                 if (MIDI_LOADED)
@@ -330,12 +311,12 @@
 
         function speedup ()
         {
-            TICKRATE = TICKRATE * 2;
+            TICKRATE = TICKRATE * 1.33;
         }
 
         function slowdown ()
         {
-            TICKRATE = TICKRATE / 2;
+            TICKRATE = TICKRATE / 1.33;
         }
 
         function playpause ()
@@ -343,8 +324,13 @@
             PAUSED = !PAUSED;
         }
 
-        function update ()
+        function update (time, delta)
         {
+            if (!PAUSED) {
+                tick = tick + (TICKRATE * (delta / 16.67));
+            }
+
+
             if (MIDI_LOADED)
             {
                 graphics.clear();
@@ -352,15 +338,15 @@
                 vn_ak = get_visible_notes_and_active_keys();
                 visible_notes = vn_ak[0]
                 active_keys = vn_ak[1]
-                
+
                 trigger_notes(active_keys)
 
                 falling_notes(visible_notes);
                 graphics.fillStyle(0x111111, 1);
                 graphics.fillRect(0, 758, 1600, 142)
-                
+
                 just_white();
-                
+
                 graphics.fillStyle(0xa5fed2, 1);
                 active_white(active_keys, visible_notes);
 
@@ -371,8 +357,6 @@
 
                 seek_point = tick / (MIDI.durationTicks + 758) * 1600
 
-                // graphics.fillStyle(0x333333, 1);
-                // graphics.fillRect(0, 100, 1600, 100);
                 graphics.fillStyle(0x999999, 0.3);
                 graphics.fillRect(0, 100, seek_point, 100);
 
@@ -382,13 +366,10 @@
                     {
                         playpause();
                     }
-                    
+
                 }
             }
-
-            if (!PAUSED) {
-                tick = tick + TICKRATE;
-            }
+            // }
         }
 
         function get_visible_notes_and_active_keys()
@@ -474,6 +455,7 @@
                 
                 graphics.fillStyle(colours[note.track][the_key[0]])
                 graphics.fillRect(the_key[1], y, the_key[3], note.durationTicks, 4);
+                // graphics.fillRoundedRect(the_key[1], y, the_key[3], note.durationTicks, 4, 10);
             }
         }
 
