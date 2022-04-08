@@ -11,10 +11,6 @@
     <a style="display:none" href="https://keshavkaushal.github.io/piano/" id="aboutpage"/>
     <script>
 
-        // make the piano sounds local?
-        // check with flowkey
-        // whats a privacy policy
-        // does file upload count as file processing?
         // get more midi colors so it doesnt crash
         // file chooser dialog only shows on second press
 
@@ -23,7 +19,6 @@
             backgroundColor: '#222',
             scale: {
                 mode: Phaser.Scale.FIT,
-                // parent: 'phaser-example',
                 autoCenter: Phaser.Scale.CENTER_BOTH,
                 width: 1600,
                 height: 900
@@ -50,7 +45,15 @@
         var seek_rect;
         var tick = 0;
         var MIDI;
-        var colours = [[0xA3D2CA, 0x5EAAA8], [0xA685E2, 0x6155A6], [0xF2AAAA, 0xE36387], [0x8B5E83, 0xD6B0B1]]
+        var colours = [
+        [0xA3D2CA, 0x5EAAA8],
+        [0xA685E2, 0x6155A6],
+        [0xF2AAAA, 0xE36387],
+        [0x8B5E83, 0xD6B0B1],
+        [0xA3D2CA, 0x5EAAA8],
+        [0xA685E2, 0x6155A6],
+        [0xF2AAAA, 0xE36387]
+        ]
         var the_keys = Array(88).fill([])
         
         var game = new Phaser.Game(config);
@@ -209,7 +212,7 @@
 
                     for (in_note of in_track.notes)
                     {
-                        out_note = {"midi": in_note.midi, "ticks": in_note.ticks * resize_factor, "durationTicks": in_note.durationTicks * resize_factor - 8}
+                        out_note = {"midi": in_note.midi, "ticks": (in_note.ticks * resize_factor) - 500, "durationTicks": in_note.durationTicks * resize_factor - 8}
 
                         out_notes.push(out_note)
                     }
@@ -267,9 +270,15 @@
             upload_container.setInteractive().on('pointerdown', () => upload_trigger());
             text = this.add.text(30, 30, "Upload", { font: "40px", fill: "#FFFFFF", align: "center"});
 
-            about_container = this.add.rectangle(280, 50, 160, 80, 0xffffff, 0.2);
-            about_container.setInteractive().on('pointerdown', () => load_about());
-            about = this.add.text(220, 30, "About", { font: "40px", fill: "#FFFFFF", align: "center"});
+            about_container = this.add.rectangle(350, 50, 300, 80, 0xffffff, 0.2);
+            about_container.setInteractive().on('pointerdown', function() {
+                if (this.scene.scale.isFullscreen) {
+                    this.scene.scale.stopFullscreen();
+                } else {
+                    this.scene.scale.startFullscreen();
+                }
+            });
+            about = this.add.text(220, 30, "Full screen", { font: "40px", fill: "#FFFFFF", align: "center"});
 
             this.add.text(1050, 30, "Speed:", { font: "40px", fill: "#FFFFFF", align: "center"});
 
