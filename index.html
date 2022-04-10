@@ -5,14 +5,24 @@
     <script src="Midi.min.js"></script>
     <script src="Tone.min.js"></script>
 </head>
-<body style="margin: 1px; overflow: hidden; background: #000">
-
-    <input style="display:none" type="file" id="filereader">
-    <a style="display:none" href="https://keshavkaushal.github.io/piano/" id="aboutpage"/>
+<body style="background: #000; margin: 0;">
+<!--     <label for="filereader"style="
+    display: inline-block;
+    padding: 10px 8px;
+    cursor: pointer;
+    color: white;
+    background: #434343;
+    font-family: system-ui;
+    position: absolute;">Upload MIDI</label> -->
+    <input type="file" id="filereader" style="display: none;">
+    <div id="phaser-example"></div>
     <script>
 
         // get more midi colors so it doesnt crash
         // file chooser dialog only shows on second press
+        // better transport controls
+        // better font
+        // trim start of MIDIs
 
         var config = {
             type: Phaser.AUTO,
@@ -21,7 +31,8 @@
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH,
                 width: 1600,
-                height: 900
+                height: 900,
+                parent: 'phaser-example'
             },
             scene: {
                 create: create,
@@ -44,6 +55,7 @@
         var statics;
         var seek_rect;
         var tick = 0;
+        var display_tick;
         var MIDI;
         var colours = [
         [0xA3D2CA, 0x5EAAA8],
@@ -153,7 +165,7 @@
             }
         }
 
-        document.getElementById("filereader").onchange = function(e)
+        document.getElementById("filereader").onchange = async function(e)
         {
             if (e.target.files.length > 0)
             {
@@ -161,9 +173,9 @@
                 reader.onload = function(e)
                 {
                     in_midi = new Midi(e.target.result);
+
                     out_midi = preprocess_midi(in_midi)
                     MIDI = out_midi
-                    
                     tick = 0
                     MIDI_LOADED = true;
                     TICKRATE    = (MIDI.durationTicks / MIDI.duration) / 60
@@ -175,6 +187,7 @@
                 }
                 reader.readAsArrayBuffer(e.target.files[0]);
             }
+            await Tone.start()
         }
 
         function preprocess_midi (in_midi)
@@ -212,7 +225,7 @@
 
                     for (in_note of in_track.notes)
                     {
-                        out_note = {"midi": in_note.midi, "ticks": (in_note.ticks * resize_factor) - 500, "durationTicks": in_note.durationTicks * resize_factor - 8}
+                        out_note = {"midi": in_note.midi, "ticks": (in_note.ticks * resize_factor), "durationTicks": in_note.durationTicks * resize_factor - 8}
 
                         out_notes.push(out_note)
                     }
@@ -266,6 +279,21 @@
             this.add.rectangle(820, 50, 15, 55, 0xffffff)
             this.add.rectangle(840, 50, 15, 55, 0xffffff)
 
+            // BACK AND FWD 5 SECS
+            back5 = this.add.rectangle(150, 480, 300, 560, 0xffffff, 0)
+            back5.setInteractive().on('pointerdown', () => back_5());
+
+            fwd5 = this.add.rectangle(1450, 480, 300, 560, 0xffffff, 0)
+            fwd5.setInteractive().on('pointerdown', () => fwd_5());
+
+            // PAUSE BTN
+            pause_mid = this.add.rectangle(800, 480, 900, 560, 0xffffff, 0)
+            pause_mid.setInteractive().on('pointerdown', () => playpause());
+
+            // CURRENT TICK
+            display_tick = this.add.text(10, 135, tick, { font: "35px", fill: "#FFFFFF", align: "left"});
+
+            // UPLOAD
             upload_container = this.add.rectangle(100, 50, 180, 80, 0xffffff, 0.2);
             upload_container.setInteractive().on('pointerdown', () => upload_trigger());
             text = this.add.text(30, 30, "Upload", { font: "40px", fill: "#FFFFFF", align: "center"});
@@ -301,6 +329,28 @@
                     tick = (pointer.worldX / 1600) * (MIDI.durationTicks + 758);
                 }
             });
+        }
+
+        function back_5 ()
+        {
+            if (MIDI_LOADED)
+            {
+                tick = tick - (5 / MIDI.duration * MIDI.durationTicks);
+                if (tick < 0) {
+                    tick = 0
+                }
+            }
+        }
+
+        function fwd_5 ()
+        {
+            if (MIDI_LOADED)
+            {
+                tick = tick + (5 / MIDI.duration * MIDI.durationTicks);
+                if (tick > MIDI.durationTicks) {
+                    tick = MIDI.durationTicks
+                }
+            }
         }
 
         function upload_trigger ()
@@ -339,10 +389,11 @@
                 tick = tick + (TICKRATE * (delta / 16.67));
             }
 
-
             if (MIDI_LOADED)
             {
                 graphics.clear();
+
+                display_tick.setText(Math.round(MIDI.duration / MIDI.durationTicks * tick))
 
                 vn_ak = get_visible_notes_and_active_keys();
                 visible_notes = vn_ak[0]
