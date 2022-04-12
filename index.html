@@ -55,6 +55,8 @@
         var statics;
         var seek_rect;
         var tick = 0;
+        var marker = 0;
+        var marker_set = false;
         var display_tick;
         var MIDI;
         var colours = [
@@ -272,12 +274,20 @@
             seeker = this.add.rectangle(800, 150, 1600, 100, 0x333333, 0.5);
             const y_button_position = 50;
 
-            playpause_container = this.add.rectangle(795, 50, 160, 80, 0xffffff, 0.2)
-            playpause_container.setInteractive().on('pointerdown', () => playpause());
+            // playpause_container = this.add.rectangle(795, 50, 160, 80, 0xffffff, 0.2)
+            // playpause_container.setInteractive().on('pointerdown', () => playpause());
             
-            this.add.triangle(765, 50, 0, 50, 50, 25, 0, 0, 0xffffff)
-            this.add.rectangle(820, 50, 15, 55, 0xffffff)
-            this.add.rectangle(840, 50, 15, 55, 0xffffff)
+            // this.add.triangle(765, 50, 0, 50, 50, 25, 0, 0, 0xffffff)
+            // this.add.rectangle(820, 50, 15, 55, 0xffffff)
+            // this.add.rectangle(840, 50, 15, 55, 0xffffff)
+
+            // MARKERS
+            place_marker = this.add.rectangle(600, 50, 80, 80, 0xffffff, 0.3)
+            place_marker.setInteractive().on('pointerdown', () => fn_place_marker());
+            clear_marker = this.add.rectangle(700, 50, 80, 80, 0xffffff, 0.3)
+            clear_marker.setInteractive().on('pointerdown', () => fn_clear_marker());
+            rwd_to_marker = this.add.rectangle(800, 50, 80, 80, 0xffffff, 0.3)
+            rwd_to_marker.setInteractive().on('pointerdown', () => fn_rwd_to_marker());
 
             // BACK AND FWD 5 SECS
             back5 = this.add.rectangle(150, 480, 300, 560, 0xffffff, 0)
@@ -329,6 +339,24 @@
                     tick = (pointer.worldX / 1600) * (MIDI.durationTicks + 758);
                 }
             });
+        }
+
+        function fn_place_marker ()
+        {
+            marker = tick.valueOf()
+            marker_set = true;
+        }
+
+        function fn_clear_marker ()
+        {
+            marker_set = false;
+        }
+
+        function fn_rwd_to_marker ()
+        {
+            if (marker_set) {
+                tick = marker.valueOf()
+            }
         }
 
         function back_5 ()
@@ -419,6 +447,14 @@
 
                 graphics.fillStyle(0x999999, 0.3);
                 graphics.fillRect(0, 100, seek_point, 100);
+
+                if (marker_set)
+                {
+                    marker_point = marker / (MIDI.durationTicks + 758) * 1600
+
+                    graphics.fillStyle(0xff0000, 1);
+                    graphics.fillRect(marker_point - 8, 100, 8, 100);
+                }
 
                 if (tick > MIDI.durationTicks + 758)
                 {
