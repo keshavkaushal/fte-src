@@ -5,6 +5,7 @@
     <script src="Midi.min.js"></script>
     <script src="Tone.min.js"></script>
 </head>
+
 <body style="background: #000; margin: 0;">
 <!--     <label for="filereader"style="
     display: inline-block;
@@ -24,9 +25,11 @@
         // better font
         // trim start of MIDIs
 
+        var piano;
+
         var config = {
             type: Phaser.AUTO,
-            backgroundColor: '#222',
+            backgroundColor: '#121212',
             scale: {
                 mode: Phaser.Scale.FIT,
                 autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -35,6 +38,7 @@
                 parent: 'phaser-example'
             },
             scene: {
+                preload: preload,
                 create: create,
                 update: update,
             }
@@ -71,9 +75,11 @@
         var the_keys = Array(88).fill([])
         
         var game = new Phaser.Game(config);
-        
-        const synth = new Tone.PolySynth().toDestination();
-        const sampler = new Tone.Sampler({
+        var synth;
+        var sampler;
+
+        synth = new Tone.PolySynth().toDestination();
+        sampler = new Tone.Sampler({
             urls: {
                 A0: "A0.mp3",
                 C1: "C1.mp3",
@@ -157,7 +163,7 @@
 
         function just_black()
         {
-            graphics.fillStyle(0x333333, 1);
+            graphics.fillStyle(0x222222, 1);
             for (key of the_keys)
             {
                 if (key[0] === 1)
@@ -167,8 +173,10 @@
             }
         }
 
-        document.getElementById("filereader").onchange = async function(e)
-        {
+
+        document.getElementById("filereader").addEventListener('change', async (e) => {
+            await Tone.start()
+
             if (e.target.files.length > 0)
             {
                 const reader = new FileReader();
@@ -178,24 +186,26 @@
 
                     out_midi = preprocess_midi(in_midi)
                     MIDI = out_midi
-                    tick = 0
+                    tick = 450
                     MIDI_LOADED = true;
                     TICKRATE    = (MIDI.durationTicks / MIDI.duration) / 60
                     RESET_TICKRATE = (MIDI.durationTicks / MIDI.duration) / 60
-
                     if (PAUSED) {
                         playpause();
                     }
                 }
                 reader.readAsArrayBuffer(e.target.files[0]);
             }
-            await Tone.start()
-        }
+        })
 
         function preprocess_midi (in_midi)
         {
+            console.log(in_midi)
             // WHAT IS THE SHORTEST NOTE IN THE WHOLE PIECE?
             var shortest_note = null;
+            // WHAT IS THE LEADING SILENCE TILL THE FIRST NOTE?
+            var ticks_to_first_note = null;
+
             for (in_track of in_midi.tracks) {
                 for (in_note of in_track.notes) {
                     if (shortest_note)
@@ -206,7 +216,17 @@
                         }
                     } else {
                         shortest_note = in_note.durationTicks
-                    } 
+                    }
+
+                    if (ticks_to_first_note === null)
+                    {
+                        ticks_to_first_note = in_note.ticks
+                    } else {
+                        if (in_note.ticks < ticks_to_first_note)
+                        {
+                            ticks_to_first_note = in_note.ticks;
+                        }
+                    }
                 }
             }
 
@@ -227,7 +247,7 @@
 
                     for (in_note of in_track.notes)
                     {
-                        out_note = {"midi": in_note.midi, "ticks": (in_note.ticks * resize_factor), "durationTicks": in_note.durationTicks * resize_factor - 8}
+                        out_note = {"midi": in_note.midi, "ticks": ((in_note.ticks - ticks_to_first_note) * resize_factor), "durationTicks": in_note.durationTicks * resize_factor - 8}
 
                         out_notes.push(out_note)
                     }
@@ -239,6 +259,19 @@
             return end_midi
         }
 
+        function preload()
+        {
+            this.load.image('fs', 'fs.png');
+            this.load.image('efs', 'efs.png');
+            this.load.image('ff', 'ff.png');
+            this.load.image('clear', 'clear.png');
+            this.load.image('setmark', 'setmark.png');
+            this.load.image('rw', 'rw.png');
+            this.load.image('reset', 'reset.png');
+            this.load.image('pin', 'pin.png');
+            this.load.image('upload', 'upload.png');
+        }
+
         function create ()
         {
             seek_rect = this.add.graphics();
@@ -248,46 +281,41 @@
             make_the_keys_map();
 
             // THE BARS TO HELP VIEWING NOTES
-            seek_rect.fillStyle(0x555555, 1);
+            seek_rect.fillStyle(0xffffff, 0.5);
             var c_line = 64
             for (var i = 0; i < 8; i++) {
                 seek_rect.fillRect(c_line, 0, 2, 900);
                 c_line += 215
             }
             
-            seek_rect.fillStyle(0x333333, 1);
+            seek_rect.fillStyle(0xffffff, 0.4);
             var e_line = 156
             for (var i = 0; i < 8; i++) {
                 seek_rect.fillRect(e_line, 0, 2, 900);
                 e_line += 215
             }
 
-            graphics.fillStyle(0x111111, 1);
+            graphics.fillStyle(0x000000, 1);
             graphics.fillRect(0, 758, 1600, 142)
+            
             just_white();
             just_black();
 
-            statics.fillStyle(0x111111, 0.8);
+            statics.fillStyle(0x121212, 1);
             statics.fillRect(0, 0, 1600, 100);
 
-            graphics.fillStyle(0x333333, 1);
-            seeker = this.add.rectangle(800, 150, 1600, 100, 0x333333, 0.5);
+            // graphics.fillStyle(0x385170, 0.5);
+            seeker = this.add.rectangle(800, 150, 1600, 100, 0x385170, 0.5);
             const y_button_position = 50;
 
-            // playpause_container = this.add.rectangle(795, 50, 160, 80, 0xffffff, 0.2)
-            // playpause_container.setInteractive().on('pointerdown', () => playpause());
-            
-            // this.add.triangle(765, 50, 0, 50, 50, 25, 0, 0, 0xffffff)
-            // this.add.rectangle(820, 50, 15, 55, 0xffffff)
-            // this.add.rectangle(840, 50, 15, 55, 0xffffff)
-
             // MARKERS
-            place_marker = this.add.rectangle(600, 50, 80, 80, 0xffffff, 0.3)
+            place_marker = this.add.rectangle(600, 50, 80, 80, 0xffffff, 0.2)
             place_marker.setInteractive().on('pointerdown', () => fn_place_marker());
-            clear_marker = this.add.rectangle(700, 50, 80, 80, 0xffffff, 0.3)
+            this.add.image(600, 50, 'setmark')
+
+            clear_marker = this.add.rectangle(700, 50, 80, 80, 0xffffff, 0.2)
             clear_marker.setInteractive().on('pointerdown', () => fn_clear_marker());
-            rwd_to_marker = this.add.rectangle(800, 50, 80, 80, 0xffffff, 0.3)
-            rwd_to_marker.setInteractive().on('pointerdown', () => fn_rwd_to_marker());
+            this.add.image(700, 50, 'clear')
 
             // BACK AND FWD 5 SECS
             back5 = this.add.rectangle(150, 480, 300, 560, 0xffffff, 0)
@@ -304,35 +332,48 @@
             display_tick = this.add.text(10, 135, tick, { font: "35px", fill: "#FFFFFF", align: "left"});
 
             // UPLOAD
-            upload_container = this.add.rectangle(100, 50, 180, 80, 0xffffff, 0.2);
+            upload_container = this.add.rectangle(50, 50, 80, 80, 0xffffff, 0.2);
             upload_container.setInteractive().on('pointerdown', () => upload_trigger());
-            text = this.add.text(30, 30, "Upload", { font: "40px", fill: "#FFFFFF", align: "center"});
+            this.add.image(50, 50, 'upload')
 
-            about_container = this.add.rectangle(350, 50, 300, 80, 0xffffff, 0.2);
+            // FULL SCREEN
+
+            fs_icon = this.add.image(140, 50, 'fs')
+            efs_icon = this.add.image(140, 50, 'efs')
+            efs_icon.visible = false
+
+            about_container = this.add.rectangle(140, 50, 80, 80, 0xffffff, 0.2);
             about_container.setInteractive().on('pointerdown', function() {
                 if (this.scene.scale.isFullscreen) {
                     this.scene.scale.stopFullscreen();
+                    fs_icon.visible = true;
+                    efs_icon.visible = false;
                 } else {
                     this.scene.scale.startFullscreen();
+                    fs_icon.visible = false;
+                    efs_icon.visible = true;
                 }
             });
-            about = this.add.text(220, 30, "Full screen", { font: "40px", fill: "#FFFFFF", align: "center"});
 
-            this.add.text(1050, 30, "Speed:", { font: "40px", fill: "#FFFFFF", align: "center"});
-
-            reset_container = this.add.rectangle(1400, 50, 200, 80, 0xffffff, 0.2);
-            reset_container.setInteractive().on('pointerdown', () => reset_speed());
-            this.add.text(1340, 30, "Reset", { font: "40px", fill: "#FFFFFF", align: "center"});
             
 
+
+            // RESET
+            reset_container = this.add.rectangle(1460, 50, 80, 80, 0xffffff, 0.2);
+            reset_container.setInteractive().on('pointerdown', () => reset_speed());
+            this.add.image(1460, 50, 'reset')
+
+            // FASTER
             ff_container = this.add.rectangle(1550, 50, 80, 80, 0xffffff, 0.2);
             ff_container.setInteractive().on('pointerdown', () => speedup());
-            this.add.text(1532, 22, "+", { font: "60px", fill: "#FFFFFF", align: "center"});
+            this.add.image(1550, 50, 'ff')
 
-            rw_container = this.add.rectangle(1250, 50, 80, 80, 0xffffff, 0.2);
+            // SLOWER
+            rw_container = this.add.rectangle(1370, 50, 80, 80, 0xffffff, 0.2);
             rw_container.setInteractive().on('pointerdown', () => slowdown());
-            this.add.text(1232, 22, "-", { font: "60px", fill: "#FFFFFF", align: "center"});
+            this.add.image(1370, 50, 'rw')
 
+            // SEEK BAR
             seeker.setInteractive().on('pointerdown', function (pointer) {
                 if (MIDI_LOADED)
                 {
@@ -352,20 +393,18 @@
             marker_set = false;
         }
 
-        function fn_rwd_to_marker ()
-        {
-            if (marker_set) {
-                tick = marker.valueOf()
-            }
-        }
-
         function back_5 ()
         {
             if (MIDI_LOADED)
             {
-                tick = tick - (5 / MIDI.duration * MIDI.durationTicks);
-                if (tick < 0) {
-                    tick = 0
+                if (marker_set)
+                {
+                    tick = marker.valueOf()
+                } else {
+                    tick = tick - (5 / MIDI.duration * MIDI.durationTicks);
+                    if (tick < 450) {
+                        tick = 450
+                    }
                 }
             }
         }
@@ -445,14 +484,14 @@
 
                 seek_point = tick / (MIDI.durationTicks + 758) * 1600
 
-                graphics.fillStyle(0x999999, 0.3);
+                graphics.fillStyle(0x9FD3C7, 0.6);
                 graphics.fillRect(0, 100, seek_point, 100);
 
                 if (marker_set)
                 {
                     marker_point = marker / (MIDI.durationTicks + 758) * 1600
 
-                    graphics.fillStyle(0xff0000, 1);
+                    graphics.fillStyle(0xE4FF5A, 1); // # FFC300
                     graphics.fillRect(marker_point - 8, 100, 8, 100);
                 }
 
@@ -536,6 +575,7 @@
                 }
 
                 if (!PAUSED){
+                    // piano.play('C', 4, 2);
                     sampler.triggerAttackRelease(frequencies_to_play, 0.4);
                 }
             }
