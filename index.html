@@ -460,6 +460,9 @@
 
                 display_tick.setText(Math.round(MIDI.duration / MIDI.durationTicks * tick))
 
+                // STOP APRES VENDREDI
+                // if (Math.round(MIDI.duration / MIDI.durationTicks * tick) > 19) {PAUSED = true;}
+
                 vn_ak = get_visible_notes_and_active_keys();
                 visible_notes = vn_ak[0]
                 active_keys = vn_ak[1]
