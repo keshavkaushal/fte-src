@@ -186,7 +186,7 @@
 
                     out_midi = preprocess_midi(in_midi)
                     MIDI = out_midi
-                    tick = 450
+                    tick = 0
                     MIDI_LOADED = true;
                     TICKRATE    = (MIDI.durationTicks / MIDI.duration) / 60
                     RESET_TICKRATE = (MIDI.durationTicks / MIDI.duration) / 60
@@ -247,7 +247,7 @@
 
                     for (in_note of in_track.notes)
                     {
-                        out_note = {"midi": in_note.midi, "ticks": ((in_note.ticks - ticks_to_first_note) * resize_factor), "durationTicks": in_note.durationTicks * resize_factor - 8}
+                        out_note = {"midi": in_note.midi, "ticks": ((in_note.ticks - ticks_to_first_note) * resize_factor) - 450, "durationTicks": in_note.durationTicks * resize_factor - 8}
 
                         out_notes.push(out_note)
                     }
@@ -295,6 +295,7 @@
                 e_line += 215
             }
 
+            // TOP NAV BAR
             graphics.fillStyle(0x000000, 1);
             graphics.fillRect(0, 758, 1600, 142)
             
@@ -304,18 +305,18 @@
             statics.fillStyle(0x121212, 1);
             statics.fillRect(0, 0, 1600, 100);
 
-            // graphics.fillStyle(0x385170, 0.5);
-            seeker = this.add.rectangle(800, 150, 1600, 100, 0x385170, 0.5);
+            // SEEK BAR
+            seeker = this.add.rectangle(800, 150, 1600, 100, 0xffffff, 0.2);
             const y_button_position = 50;
 
             // MARKERS
-            place_marker = this.add.rectangle(600, 50, 80, 80, 0xffffff, 0.2)
+            place_marker = this.add.rectangle(400, 50, 80, 80, 0xffffff, 0.2)
             place_marker.setInteractive().on('pointerdown', () => fn_place_marker());
-            this.add.image(600, 50, 'setmark')
+            this.add.image(400, 50, 'setmark')
 
-            clear_marker = this.add.rectangle(700, 50, 80, 80, 0xffffff, 0.2)
+            clear_marker = this.add.rectangle(500, 50, 80, 80, 0xffffff, 0.2)
             clear_marker.setInteractive().on('pointerdown', () => fn_clear_marker());
-            this.add.image(700, 50, 'clear')
+            this.add.image(500, 50, 'clear')
 
             // BACK AND FWD 5 SECS
             back5 = this.add.rectangle(150, 480, 300, 560, 0xffffff, 0)
@@ -336,13 +337,27 @@
             upload_container.setInteractive().on('pointerdown', () => upload_trigger());
             this.add.image(50, 50, 'upload')
 
-            // FULL SCREEN
+            // RESET
+            reset_container = this.add.rectangle(1060, 50, 80, 80, 0xffffff, 0.2);
+            reset_container.setInteractive().on('pointerdown', () => reset_speed());
+            this.add.image(1060, 50, 'reset')
 
-            fs_icon = this.add.image(140, 50, 'fs')
-            efs_icon = this.add.image(140, 50, 'efs')
+            // FASTER
+            ff_container = this.add.rectangle(1150, 50, 80, 80, 0xffffff, 0.2);
+            ff_container.setInteractive().on('pointerdown', () => speedup());
+            this.add.image(1150, 50, 'ff')
+
+            // SLOWER
+            rw_container = this.add.rectangle(970, 50, 80, 80, 0xffffff, 0.2);
+            rw_container.setInteractive().on('pointerdown', () => slowdown());
+            this.add.image(970, 50, 'rw')
+
+            // FULL SCREEN
+            fs_icon = this.add.image(1550, 50, 'fs')
+            efs_icon = this.add.image(1550, 50, 'efs')
             efs_icon.visible = false
 
-            about_container = this.add.rectangle(140, 50, 80, 80, 0xffffff, 0.2);
+            about_container = this.add.rectangle(1550, 50, 80, 80, 0xffffff, 0.2);
             about_container.setInteractive().on('pointerdown', function() {
                 if (this.scene.scale.isFullscreen) {
                     this.scene.scale.stopFullscreen();
@@ -355,23 +370,6 @@
                 }
             });
 
-            
-
-
-            // RESET
-            reset_container = this.add.rectangle(1460, 50, 80, 80, 0xffffff, 0.2);
-            reset_container.setInteractive().on('pointerdown', () => reset_speed());
-            this.add.image(1460, 50, 'reset')
-
-            // FASTER
-            ff_container = this.add.rectangle(1550, 50, 80, 80, 0xffffff, 0.2);
-            ff_container.setInteractive().on('pointerdown', () => speedup());
-            this.add.image(1550, 50, 'ff')
-
-            // SLOWER
-            rw_container = this.add.rectangle(1370, 50, 80, 80, 0xffffff, 0.2);
-            rw_container.setInteractive().on('pointerdown', () => slowdown());
-            this.add.image(1370, 50, 'rw')
 
             // SEEK BAR
             seeker.setInteractive().on('pointerdown', function (pointer) {
@@ -402,8 +400,8 @@
                     tick = marker.valueOf()
                 } else {
                     tick = tick - (5 / MIDI.duration * MIDI.durationTicks);
-                    if (tick < 450) {
-                        tick = 450
+                    if (tick < 0) {
+                        tick = 0
                     }
                 }
             }
@@ -482,16 +480,18 @@
                 graphics.fillStyle(0x62B38A, 1);
                 active_black(active_keys, visible_notes);
 
+
+                // SEEK BAR PROGRESSING
                 seek_point = tick / (MIDI.durationTicks + 758) * 1600
 
-                graphics.fillStyle(0x9FD3C7, 0.6);
+                graphics.fillStyle(0xffffff, 0.5);
                 graphics.fillRect(0, 100, seek_point, 100);
 
                 if (marker_set)
                 {
                     marker_point = marker / (MIDI.durationTicks + 758) * 1600
 
-                    graphics.fillStyle(0xE4FF5A, 1); // # FFC300
+                    graphics.fillStyle(0xFFC300, 1); // # FFC300
                     graphics.fillRect(marker_point - 8, 100, 8, 100);
                 }
 
@@ -504,7 +504,6 @@
 
                 }
             }
-            // }
         }
 
         function get_visible_notes_and_active_keys()
